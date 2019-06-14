@@ -12,7 +12,6 @@ Find us at:
 * [Discord](https://discord.gg/YWrKVTn) - realtime support / chat with the community and the team.
 * [IRC](https://irc.linuxserver.io) - on freenode at `#linuxserver.io`. Our primary support channel is Discord.
 * [Blog](https://blog.linuxserver.io) - all the things you can do with our containers including How-To guides, opinions and much more!
-* [Podcast](https://anchor.fm/linuxserverio) - on hiatus. Coming back soon (late 2018).
 
 # [linuxserver/airsonic](https://github.com/linuxserver/docker-airsonic)
 [![](https://img.shields.io/discord/354974912613449730.svg?logo=discord&label=LSIO%20Discord&style=flat-square)](https://discord.gg/YWrKVTn)
@@ -39,7 +38,7 @@ The architectures supported by this image are:
 | :----: | --- |
 | x86-64 | amd64-latest |
 | arm64 | arm64v8-latest |
-| armhf | arm32v6-latest |
+| armhf | arm32v7-latest |
 
 
 ## Usage
@@ -51,8 +50,8 @@ Here are some example snippets to help you get started creating a container.
 ```
 docker create \
   --name=airsonic \
-  -e PUID=1001 \
-  -e PGID=1001 \
+  -e PUID=1000 \
+  -e PGID=1000 \
   -e TZ=Europe/London \
   -e CONTEXT_PATH=<URL_BASE> `#optional` \
   -e JAVA_OPTS=<options> `#optional` \
@@ -79,8 +78,8 @@ services:
     image: linuxserver/airsonic
     container_name: airsonic
     environment:
-      - PUID=1001
-      - PGID=1001
+      - PUID=1000
+      - PGID=1000
       - TZ=Europe/London
       - CONTEXT_PATH=<URL_BASE> #optional
       - JAVA_OPTS=<options> #optional
@@ -92,7 +91,6 @@ services:
       - </path/to/other media>:/media #optional
     ports:
       - 4040:4040
-    mem_limit: 4096m
     restart: unless-stopped
 ```
 
@@ -103,8 +101,8 @@ Container images are configured using parameters passed at runtime (such as thos
 | Parameter | Function |
 | :----: | --- |
 | `-p 4040` | WebUI |
-| `-e PUID=1001` | for UserID - see below for explanation |
-| `-e PGID=1001` | for GroupID - see below for explanation |
+| `-e PUID=1000` | for UserID - see below for explanation |
+| `-e PGID=1000` | for GroupID - see below for explanation |
 | `-e TZ=Europe/London` | Specify a timezone to use EG Europe/London. |
 | `-e CONTEXT_PATH=<URL_BASE>` | For setting url-base in reverse proxy setups. |
 | `-e JAVA_OPTS=<options>` | For passing additional java options. |
@@ -120,11 +118,11 @@ When using volumes (`-v` flags) permissions issues can arise between the host OS
 
 Ensure any volume directories on the host are owned by the same user you specify and any permissions issues will vanish like magic.
 
-In this instance `PUID=1001` and `PGID=1001`, to find yours use `id user` as below:
+In this instance `PUID=1000` and `PGID=1000`, to find yours use `id user` as below:
 
 ```
   $ id username
-    uid=1001(dockeruser) gid=1001(dockergroup) groups=1001(dockergroup)
+    uid=1000(dockeruser) gid=1000(dockergroup) groups=1000(dockergroup)
 ```
 
 
@@ -163,12 +161,44 @@ Below are the instructions for updating containers:
 * You can also remove the old dangling images: `docker image prune`
 
 ### Via Docker Compose
-* Update the image: `docker-compose pull linuxserver/airsonic`
-* Let compose update containers as necessary: `docker-compose up -d`
+* Update all images: `docker-compose pull`
+  * or update a single image: `docker-compose pull airsonic`
+* Let compose update all containers as necessary: `docker-compose up -d`
+  * or update a single container: `docker-compose up -d airsonic`
 * You can also remove the old dangling images: `docker image prune`
+
+### Via Watchtower auto-updater (especially useful if you don't remember the original parameters)
+* Pull the latest image at its tag and replace it with the same env variables in one run:
+  ```
+  docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower \
+  --run-once airsonic
+  ```
+* You can also remove the old dangling images: `docker image prune`
+
+## Building locally
+
+If you want to make local modifications to these images for development purposes or just to customize the logic: 
+```
+git clone https://github.com/linuxserver/docker-airsonic.git
+cd docker-airsonic
+docker build \
+  --no-cache \
+  --pull \
+  -t linuxserver/airsonic:latest .
+```
+
+The ARM variants can be built on x86_64 hardware using `multiarch/qemu-user-static`
+```
+docker run --rm --privileged multiarch/qemu-user-static:register --reset
+```
+
+Once registered you can define the dockerfile to use with `-f Dockerfile.aarch64`.
 
 ## Versions
 
+* **24.03.19:** - Switching to new Base images, shift to arm32v7 tag.
 * **26.01.19:** - Add pipeline logic and multi arch.
 * **05.01.19:** - Linting fixes.
 * **27.08.18:** - Use new inhouse java baseimage for quicker builds.
